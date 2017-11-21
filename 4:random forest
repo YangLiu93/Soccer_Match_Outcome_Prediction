@@ -1,0 +1,43 @@
+
+```{r}
+#bagging#
+df$result <- as.factor(df$result)
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+library(randomForest)
+bag_match=randomForest(result~.,data=train,mtry=15,importance=TRUE)
+bag_match
+yhat.bag = predict(bag_match,newdata=val)
+cqwe <- table(val$result,yhat.bag)
+(acc <- (cqwe[1,1]+cqwe[2,2])/sum(cqwe))
+importance(bag_match)
+varImpPlot(bag_match)
+```
+
+
+```{r}
+#random forest#
+ranfor_match=randomForest(result~.,data=train,mtry=3,importance=TRUE)
+ranfor_match
+yhat.ranfor = predict(ranfor_match,newdata=val)
+cqwe <- table(val$result,yhat.ranfor)
+(acc <- (cqwe[1,1]+cqwe[2,2])/sum(cqwe))
+importance(ranfor_match)
+varImpPlot(ranfor_match)
+```
+
+
+```{r}
+#boosting#
+library(gbm)
+boost_match=gbm(result~.,data=train,distribution="gaussian",n.trees=5000,interaction.depth=1)
+summary(boost_match)
+par(mfrow=c(1,2))
+yhat.boost=predict(boost_match,newdata=val,n.trees=5000,type="response")
+predicted <- ifelse(yhat.boost>=1.5,1,0)
+czxc = table(val$result,predicted)
+czxc
+(acc <- (czxc[1,1]+czxc[2,2])/sum(czxc))
+```
