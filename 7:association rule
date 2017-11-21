@@ -1,0 +1,26 @@
+```{r}
+#association rule#
+df$bdspeed1 <- ifelse(df$bdspeed>0,1,0)
+df$pdribbling1 <- ifelse(df$pdribbling>0,1,0)
+df$ppass1 <- ifelse(df$ppass>0,1,0)
+df$cpass1 <- ifelse(df$cpass>0,1,0)
+df$ccross1 <- ifelse(df$ccross>0,1,0)
+df$cshoot1 <- ifelse(df$cshoot>0,1,0)
+df$dpressure1 <- ifelse(df$dpressure>0,1,0)
+df$daggression1 <- ifelse(df$daggression>0,1,0)
+df$dwidth1 <- ifelse(df$dwidth>0,1,0)
+df[,2:10] <- NULL
+fun <- function(x){ 
+  x=factor(x)
+} 
+df[,2:10] <- lapply(df[,2:10],fun)
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+library(arules)
+library(arulesViz)
+rules<-apriori(data=df,parameter = list(supp=0.05,conf=0.5),appearance = list(default="lhs",rhs="result=1"),control=list(verbose=F))
+rules<-sort(rules,decreasing = TRUE,by="confidence")
+inspect(rules[1:5])
+```
