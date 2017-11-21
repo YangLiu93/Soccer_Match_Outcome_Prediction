@@ -1,0 +1,36 @@
+
+```{r}
+#classification tree#
+library(ISLR)
+library(tree)
+df$bdspeed <- df$AVG.buildUpPlaySpeed.-df$AVG.buildUpPlaySpeed..1
+df$pdribbling <- df$avg.buildUpPlayDribbling.-df$avg.buildUpPlayDribbling..1
+df$ppass <- df$avg.buildUpPlayPassing.-df$avg.buildUpPlayPassing..1
+df$cpass <- df$avg.chanceCreationPassing.-df$avg.chanceCreationPassing..1
+df$ccross <- df$avg.chanceCreationCrossing.-df$avg.chanceCreationCrossing..1
+df$cshoot <- df$avg.chanceCreationShooting.-df$avg.chanceCreationShooting..1
+df$dpressure <- df$avg.defencePressure.-df$avg.defencePressure..1
+df$daggression <- df$avg.defenceAggression.-df$avg.defenceAggression..1
+df$dwidth <- df$avg.defenceTeamWidth.-df$avg.defenceTeamWidth..1
+df[,1:18] <- NULL
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+tree.result <- tree(result~.,data = train)
+summary(tree.result)
+plot(tree.result)
+text(tree.result,pretty = 0)
+#pruned tree#
+set.seed(123)
+tree.result1 <- tree(result~.,data = train)
+cv.result <- cv.tree(tree.result1, FUN = prune.misclass)
+cv.result
+prune.result <- prune.misclass(tree.result1,best = 2)
+prune.result
+pred <- predict(prune.result,val,type = "class")
+c1 <- table(pred,val$result)
+c1
+acc.ct <- (c1[1,1]+c1[2,2])/sum(c1)
+acc.ct
+```
