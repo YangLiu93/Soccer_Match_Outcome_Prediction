@@ -6,6 +6,7 @@ The dependent variable is a binary variable, describing whether in-home team win
 
 The independent variables are soccer team attributes, such as speed, defence, pass and dribble.
 
+----------------------------------------------------------------------------------------------------------------------------
 The original data set can be downloaded here:
 https://www.kaggle.com/hugomathien/soccer/data
 
