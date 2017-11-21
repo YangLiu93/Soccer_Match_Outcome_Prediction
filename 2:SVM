@@ -1,0 +1,46 @@
+
+```{r}
+#svm linear kernel
+library(e1071)
+svm_model <- svm(result~.,train,kernel= "linear",cost= 10)
+summary(svm_model)
+predict_svm <- predict(svm_model,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+
+accRate <- function(table){
+  (table[1,1]+table[2,2])/sum(table)
+}
+
+accRate(svm_table)
+```
+
+
+```{r}
+#svm polynomial kernel
+svm_model_polynomial <- svm(result~.,train,kernel = "polynomial",cost = 10)
+predict_svm <- predict(svm_model_polynomial,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+accRate(svm_table)
+```
+
+
+```{r}
+#svm radial kernel
+svm_model_radial <- svm(result~.,train,kernel = "radial",cost = 10)
+predict_svm <- predict(svm_model_radial,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+accRate(svm_table)
+```
+
+
+```{r}
+#svm sigmoid kernel
+svm_model_polynomial <- svm(result~.,train,kernel = "sigmoid" ,cost = 10, gamma = 0.05)
+predict_svm <- predict(svm_model_polynomial,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+accRate(svm_table)
+```
