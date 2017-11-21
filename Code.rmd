@@ -1,0 +1,390 @@
+---
+title: "dm project"
+author: "yl"
+date: "11/21/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+#data cleaning#
+df <- read.csv("match.cleaned.csv")
+df[,1:5] <- NULL
+df[,3] <- NULL
+df$result <- ifelse(df$home_team_goal>df$away_team_goal,1,0)
+df[,1:2] <- NULL
+df[,10] <- NULL
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+```
+
+
+```{r}
+#linear regression#
+fit1 <- lm(result~.,data = train)
+summary(fit1)
+actual.lm <- val$result
+pre.lm <- predict(fit1, newdata = val,type = "response")
+#Roc Curve#
+cutoff <- seq(0, 1, length = 100)
+fpr <- numeric(100)
+tpr <- numeric(100)
+roc.table <- data.frame(Cutoff = cutoff, FPR = fpr,TPR = tpr)
+for (i in 1:100) {
+  roc.table$FPR[i] <- sum(pre.lm > cutoff[i] & actual.lm == "0")/sum(actual.lm == "0")
+  roc.table$TPR[i] <- sum(pre.lm > cutoff[i] & actual.lm == "1")/sum(actual.lm == "1")
+}
+
+plot(TPR ~ FPR, data = roc.table, type = "o",xlab="1 - Specificity",ylab="Sensitivity",col="blue",lty=2)
+abline(a = 0, b = 1, lty = 2,col="red")
+#best cutoff#
+cutoff <- seq(0,1,length=100)
+accuracy <- numeric(100)
+roc.table <- data.frame(Cutoff = cutoff, Accuracy = accuracy)
+for (i in 1:100) {
+  roc.table$Accuracy[i] <- (sum(pre.lm > cutoff[i] & actual.lm == "1")+sum(pre.lm < cutoff[i] & actual.lm =="0"))/nrow(val)
+  roc.table$Cutoff[i] <- cutoff[i]
+}
+plot <-plot(Accuracy~Cutoff, data=roc.table, type="s", xlab= "Cutoff", ylab="Accuracy", col="blue")
+cutoff <- seq(0, 1, length = 100)
+fp <- numeric(100)
+fn <- numeric(100)
+misclass <- data.frame(Cutoff = cutoff, FP = fp, FN = fn)
+for (i in 1:100) {
+  misclass$FP[i] <- sum(pre.lm > cutoff[i] & actual.lm == "0")
+  misclass$FN[i] <- sum(pre.lm < cutoff[i] & actual.lm == "1")
+  misclass$error[i] <- sum(misclass$FP[i]+misclass$FN[i])
+}
+bestcutoff <- misclass$Cutoff[which.min(misclass$error)]
+
+pre.lmx <- as.integer(pre.lm>bestcutoff)
+t.lm <- table(actual.lm,pre.lmx)
+t.lm
+acc.lm <- (t.lm[1,1]+t.lm[2,2])/sum(t.lm)
+acc.lm
+```
+
+
+```{r}
+#svm linear kernel
+library(e1071)
+svm_model <- svm(result~.,train,kernel= "linear",cost= 10)
+summary(svm_model)
+predict_svm <- predict(svm_model,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+
+accRate <- function(table){
+  (table[1,1]+table[2,2])/sum(table)
+}
+
+accRate(svm_table)
+```
+
+
+```{r}
+#svm polynomial kernel
+svm_model_polynomial <- svm(result~.,train,kernel = "polynomial",cost = 10)
+predict_svm <- predict(svm_model_polynomial,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+accRate(svm_table)
+```
+
+
+```{r}
+#svm radial kernel
+svm_model_radial <- svm(result~.,train,kernel = "radial",cost = 10)
+predict_svm <- predict(svm_model_radial,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+accRate(svm_table)
+```
+
+
+```{r}
+#svm sigmoid kernel
+svm_model_polynomial <- svm(result~.,train,kernel = "sigmoid" ,cost = 10, gamma = 0.05)
+predict_svm <- predict(svm_model_polynomial,val)
+predict_svm = ifelse(predict_svm >0.5,1,0)
+svm_table <- table(predict_svm,val$result)
+accRate(svm_table)
+```
+
+
+```{r}
+df <- read.csv("match_team2011_.csv")
+df$result <- ifelse(df$home_team_goal>df$away_team_goal,1,0)
+df[,1:7] <- NULL
+df[,2] <- NULL
+df[,9] <- NULL
+df[,10] <- NULL
+df$bdspeed <- df$buildUpPlaySpeed-df$buildUpPlaySpeed.1
+df$ppass <- df$buildUpPlayPassing-df$buildUpPlayPassing.1
+df$cpass <- df$chanceCreationPassing-df$chanceCreationPassing.1
+df$ccross <- df$chanceCreationCrossing-df$chanceCreationCrossing.1
+df$cshoot <- df$chanceCreationShooting-df$chanceCreationShooting.1
+df$dpressure <- df$defencePressure-df$defencePressure.1
+df$daggression <- df$defenceAggression-df$defenceAggression.1
+df$dwidth <- df$defenceTeamWidth-df$defenceTeamWidth.1
+df[,1:16] <- NULL
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+#lm glm#
+fit1 <- lm(result~.,data = train)
+summary(fit1)
+fit2 <- glm(result~.,data = train, family = "binomial")
+summary(fit2)
+actual <- val$result
+
+predicted.probability <- predict(fit2, newdata=val, type = "response") 
+df1V <- data.frame(predicted.probability, actual)
+df1VS <- df1V[order(-predicted.probability),]
+df1VS$Gains <- cumsum(df1VS$actual)
+plot(df1VS$Gains,type="n",main="Validation Data Gains Chart-logis",xlab="Number of Cases",ylab="Cumulative Success")
+lines(df1VS$Gains)
+abline(0,sum(df1VS$actual)/nrow(df1VS),lty = 2, col="red")
+```
+
+
+
+```{r}
+#logistic regression#
+fit2 <- glm(result~.,data = train,family = "binomial")
+summary(fit2)
+actual.glm <- val$result
+pre.glm <- predict(fit2, newdata = val,type = "response")
+pre.glm <- as.integer(pre.glm>0.5)
+t.glm <- table(actual.glm,pre.glm)
+t.glm
+acc.glm <- (t.glm[1,1]+t.glm[2,2])/sum(t.glm)
+acc.glm
+cutoff <- seq(0, 1, length = 100)
+fpr <- numeric(100)
+tpr <- numeric(100)
+roc.table <- data.frame(Cutoff = cutoff, FPR = fpr,TPR = tpr)
+for (i in 1:100) {
+  roc.table$FPR[i] <- sum(pre.glm > cutoff[i] & actual.glm == "0")/sum(actual.glm == "0")
+  roc.table$TPR[i] <- sum(pre.glm > cutoff[i] & actual.glm == "1")/sum(actual.glm == "1")
+}
+
+plot(TPR ~ FPR, data = roc.table, type = "o",xlab="1 - Specificity",ylab="Sensitivity",col="blue",lty=2)
+abline(a = 0, b = 1, lty = 2,col="red")
+```
+
+
+```{r}
+#lasso#
+library(leaps)
+library(glmnet)
+subselect_full <- regsubsets(result~.,df,nvmax = 18)
+sub_full_summary <- summary(subselect_full)
+sub_full_summary
+plot(sub_full_summary$bic,xlab = "number of variables")
+which.min(sub_full_summary$bic)
+x=model.matrix(result~.,df)
+y=df$result
+grid = 10^seq(10,-2,length=100)
+lasso <- glmnet(x,y,alpha = 1,lambda = grid)
+plot(lasso)
+
+set.seed(123)
+cv.out =cv.glmnet(x,y,alpha = 1)
+plot(cv.out)
+bestlam=cv.out$lambda.min
+out=glmnet(x,y,alpha = 1,lambda = grid)
+lasso.coef=predict(out,type="coefficients",s=bestlam)[1:18,]
+lasso.coef[lasso.coef!=0]
+```
+
+
+```{r}
+#quadratic logistic regression#
+df$avg.buildUpPlayPassing.1 <- df$avg.buildUpPlayPassing.^2
+df$avg.chanceCreationCrossing.1 <- df$avg.chanceCreationCrossing.^2
+df$avg.chanceCreationShooting.1 <- df$avg.chanceCreationShooting.^2
+df$avg.defencePressure.1 <- df$avg.defencePressure.^2
+df$avg.defenceAggression.1 <- df$avg.defenceAggression.^2
+df$avg.defenceTeamWidth.1 <- df$avg.defenceTeamWidth.^2
+df$avg.chanceCreationPassing..11 <- df$avg.buildUpPlayPassing..1^2
+df$avg.chanceCreationCrossing..11 <- df$avg.chanceCreationCrossing..1^2
+df$avg.chanceCreationShooting..11 <- df$avg.chanceCreationShooting..1^2
+df$avg.defencePressure..11 <- df$avg.defencePressure..1^2
+df$avg.defenceAggression..11 <- df$avg.defenceAggression..1^2
+df$avg.defenceTeamWidth..11 <- df$avg.defenceTeamWidth..1^2
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+fit3 <- glm(result~.,data = train,family = "binomial")
+summary(fit3)
+predict_fit3 <- predict(fit3,val, type = "response")
+predict_fit3 = ifelse(predict_fit3>0.5,1,0)
+(t1 <- table(val$result,predict_fit3))
+(acc<- (t1[1,1]+t1[2,2])/sum(t1))
+```
+
+
+```{r}
+#neural network#
+library(neuralnet)
+df[,20:31] <- NULL
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+nn <- neuralnet(result ~ train$AVG.buildUpPlaySpeed.+train$avg.buildUpPlayDribbling.+train$avg.buildUpPlayPassing.+train$avg.chanceCreationPassing.+train$avg.chanceCreationCrossing.+train$avg.chanceCreationShooting.+train$avg.defencePressure.+train$avg.defenceAggression.+train$avg.defenceTeamWidth.+train$AVG.buildUpPlaySpeed..1+train$avg.buildUpPlayDribbling..1+train$avg.buildUpPlayPassing..1+train$avg.chanceCreationPassing..1+train$avg.chanceCreationCrossing..1+train$avg.chanceCreationShooting..1+train$avg.defencePressure..1+train$avg.defenceAggression..1+train$avg.defenceTeamWidth..1, data = train, hidden = c(2))
+plot(nn)
+nn
+```
+
+
+```{r}
+#bagging#
+df$result <- as.factor(df$result)
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+library(randomForest)
+bag_match=randomForest(result~.,data=train,mtry=15,importance=TRUE)
+bag_match
+yhat.bag = predict(bag_match,newdata=val)
+cqwe <- table(val$result,yhat.bag)
+(acc <- (cqwe[1,1]+cqwe[2,2])/sum(cqwe))
+importance(bag_match)
+varImpPlot(bag_match)
+```
+
+
+```{r}
+#random forest#
+ranfor_match=randomForest(result~.,data=train,mtry=3,importance=TRUE)
+ranfor_match
+yhat.ranfor = predict(ranfor_match,newdata=val)
+cqwe <- table(val$result,yhat.ranfor)
+(acc <- (cqwe[1,1]+cqwe[2,2])/sum(cqwe))
+importance(ranfor_match)
+varImpPlot(ranfor_match)
+```
+
+
+```{r}
+#boosting#
+library(gbm)
+boost_match=gbm(result~.,data=train,distribution="gaussian",n.trees=5000,interaction.depth=1)
+summary(boost_match)
+par(mfrow=c(1,2))
+yhat.boost=predict(boost_match,newdata=val,n.trees=5000,type="response")
+predicted <- ifelse(yhat.boost>=1.5,1,0)
+czxc = table(val$result,predicted)
+czxc
+(acc <- (czxc[1,1]+czxc[2,2])/sum(czxc))
+```
+
+
+```{r}
+#knn#
+library(class)
+val_input<-as.matrix(val[,1:18])
+train_input<-as.matrix(train[,1:18])
+train_output<-as.vector(train[,19])
+kmax<-20
+error<-rep(0,kmax)
+for(i in 1:kmax)
+{
+  prediction <- knn(train_input,val_input,train_output, k=i)
+  CM <- table(prediction, val$result)
+  error[i] <- (CM[1,2]+CM[2,1])/sum(CM)
+}
+z <- which.min(error)
+prediction.aa <- knn(train_input,val_input,train_output, k=z)
+CM.aa <- table(prediction.aa, val$result)
+error.aa <- (CM.aa[1,2]+CM.aa[2,1])/sum(CM.aa)
+accuracy.aa<-1-error.aa
+accuracy.aa
+CM.aa
+```
+
+
+```{r}
+#classification tree#
+library(ISLR)
+library(tree)
+df$bdspeed <- df$AVG.buildUpPlaySpeed.-df$AVG.buildUpPlaySpeed..1
+df$pdribbling <- df$avg.buildUpPlayDribbling.-df$avg.buildUpPlayDribbling..1
+df$ppass <- df$avg.buildUpPlayPassing.-df$avg.buildUpPlayPassing..1
+df$cpass <- df$avg.chanceCreationPassing.-df$avg.chanceCreationPassing..1
+df$ccross <- df$avg.chanceCreationCrossing.-df$avg.chanceCreationCrossing..1
+df$cshoot <- df$avg.chanceCreationShooting.-df$avg.chanceCreationShooting..1
+df$dpressure <- df$avg.defencePressure.-df$avg.defencePressure..1
+df$daggression <- df$avg.defenceAggression.-df$avg.defenceAggression..1
+df$dwidth <- df$avg.defenceTeamWidth.-df$avg.defenceTeamWidth..1
+df[,1:18] <- NULL
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+tree.result <- tree(result~.,data = train)
+summary(tree.result)
+plot(tree.result)
+text(tree.result,pretty = 0)
+#pruned tree#
+set.seed(123)
+tree.result1 <- tree(result~.,data = train)
+cv.result <- cv.tree(tree.result1, FUN = prune.misclass)
+cv.result
+prune.result <- prune.misclass(tree.result1,best = 2)
+prune.result
+pred <- predict(prune.result,val,type = "class")
+c1 <- table(pred,val$result)
+c1
+acc.ct <- (c1[1,1]+c1[2,2])/sum(c1)
+acc.ct
+```
+
+
+```{r}
+#association rule#
+df$bdspeed1 <- ifelse(df$bdspeed>0,1,0)
+df$pdribbling1 <- ifelse(df$pdribbling>0,1,0)
+df$ppass1 <- ifelse(df$ppass>0,1,0)
+df$cpass1 <- ifelse(df$cpass>0,1,0)
+df$ccross1 <- ifelse(df$ccross>0,1,0)
+df$cshoot1 <- ifelse(df$cshoot>0,1,0)
+df$dpressure1 <- ifelse(df$dpressure>0,1,0)
+df$daggression1 <- ifelse(df$daggression>0,1,0)
+df$dwidth1 <- ifelse(df$dwidth>0,1,0)
+df[,2:10] <- NULL
+fun <- function(x){ 
+  x=factor(x)
+} 
+df[,2:10] <- lapply(df[,2:10],fun)
+set.seed(12345)
+intrain <- sample(nrow(df),0.7*nrow(df))
+train <- df[intrain,]
+val <- df[-intrain,]
+library(arules)
+library(arulesViz)
+rules<-apriori(data=df,parameter = list(supp=0.05,conf=0.5),appearance = list(default="lhs",rhs="result=1"),control=list(verbose=F))
+rules<-sort(rules,decreasing = TRUE,by="confidence")
+inspect(rules[1:5])
+```
+
+
+```{r}
+#naive bayes#
+library(e1071)
+nb.model <- naiveBayes(result~.,data = train)
+pred2 <- predict(nb.model,newdata = val)
+c2 <- table(pred2,val$result,dnn = list('pred','actual'))
+c2
+acc.nb <- (c2[1,1]+c2[2,2])/sum(c2)
+acc.nb
+nb.model$apriori
+nb.model
+```
+
