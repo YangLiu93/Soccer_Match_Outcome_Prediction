@@ -1,12 +1,12 @@
 ---
 title: "dm project"
-author: "yl"
-date: "11/21/2017"
+author: "yangliu"
+date: "5/7/2017"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-#data cleaning#
+#data preparation#
 df <- read.csv("match.cleaned.csv")
 df[,1:5] <- NULL
 df[,3] <- NULL
