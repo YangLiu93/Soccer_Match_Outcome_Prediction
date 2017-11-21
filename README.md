@@ -13,6 +13,10 @@ https://www.kaggle.com/hugomathien/soccer/data
 It is a SQLite database consisting seven tables. It needs to be transformed into .csv file before using R to analyze. Besides, since the data about match, team attributes and player attributes are displayed in different tables, you need to merge these tables if you want to analyze the relationship between match outcome and team/player attributes.
 
 
+____________________________________________________________________________________________________________________________
+To run the codes, please follow the number frequency. Because some changes are made to variables in each part, it will cause error if you run later part without running all previous parts first.
+
+
 Required packages to successfully execute the script:
 
 library(readr)
