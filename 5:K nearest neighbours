@@ -1,0 +1,22 @@
+```{r}
+#knn#
+library(class)
+val_input<-as.matrix(val[,1:18])
+train_input<-as.matrix(train[,1:18])
+train_output<-as.vector(train[,19])
+kmax<-20
+error<-rep(0,kmax)
+for(i in 1:kmax)
+{
+  prediction <- knn(train_input,val_input,train_output, k=i)
+  CM <- table(prediction, val$result)
+  error[i] <- (CM[1,2]+CM[2,1])/sum(CM)
+}
+z <- which.min(error)
+prediction.aa <- knn(train_input,val_input,train_output, k=z)
+CM.aa <- table(prediction.aa, val$result)
+error.aa <- (CM.aa[1,2]+CM.aa[2,1])/sum(CM.aa)
+accuracy.aa<-1-error.aa
+accuracy.aa
+CM.aa
+```
