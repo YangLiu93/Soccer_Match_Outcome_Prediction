@@ -1,12 +1,14 @@
 # Soccer_Match_Result_Prediction
-This project is to predict whether in-home team will win a match or not, using logistic regression, SVM, random forest,etc. in R
+This project is to predict whether in-home soccer team will win a match againt away-home team or not. Algorithms such as logistic regression, SVM and random forest are used to analyze in R. 
 
-The dependent variable is binary variable, describing whether in-home team wins the game or not. The draw and lose outcome are classified into one category. We only care about the win outcome in this project.
 
-The independent variables I use are soccer team attributes, such as speed, defence, pass and dribble.
+The dependent variable is a binary variable, describing whether in-home team wins the game or not. The draw outcome and lose outcome are classified into one category. We only care about the win outcome in this project.
+
+The independent variables are soccer team attributes, such as speed, defence, pass and dribble.
 
 The original data set can be downloaded here:
 https://www.kaggle.com/hugomathien/soccer/data
+
 
 It is a SQLite database consisting seven tables. It needs to be transformed into .csv file before using R to analyze. Besides, since the data about match, team attributes and player attributes are displayed in different tables, you need to merge these tables if you want to analyze the relationship between match outcome and team/player attributes.
 
