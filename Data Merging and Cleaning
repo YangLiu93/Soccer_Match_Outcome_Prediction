@@ -1,0 +1,38 @@
+#Select needed information from match table
+create table match_forteam1
+as 
+    select home_team_api_id,away_team_api_id,home_team_goal,away_team_goal
+    from Match;
+
+
+#Select needed information from team table, this is to make team_api_id unique, which is required when
+#joining tables
+create table team_unique
+as
+    select team_api_id,
+    AVG(buildUpPlaySpeed),
+    avg(buildUpPlayDribbling),
+    avg(buildUpPlayPassing),
+    avg(chanceCreationPassing),
+    avg(chanceCreationCrossing),
+    avg(chanceCreationShooting),
+    avg(defencePressure),
+    avg(defenceAggression),
+    avg(defenceTeamWidth)
+    from Team_Attributes
+group by team_api_id;
+
+#Join Match table with Team table, first home team
+create table match_team1
+as 
+    select *
+    from Match_forteam1 left join team_unique
+on Match_forteam1.home_team_api_id = team_unique.team_api_id;
+
+#Join Match table with Team table, second away team
+create table match_team2
+as
+    select * 
+    from match_team1 left join team_unique
+    on match_team1.away_team_api_id = team_unique.team_api_id;
+ 
