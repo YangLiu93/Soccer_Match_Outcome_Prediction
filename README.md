@@ -1,7 +1,7 @@
-# Soccer_Match_Outcome_Prediction
+# Soccer_Match_Result_Prediction
 This project is to predict whether in-home team will win a match or not, using logistic regression, SVM, random forest,etc. in R
 
-The dependent variable is binary variable, describing whether in-home team wins the game or not. The draw outcome and lose outcome are classified into one category. We only care about the win outcome in this project.
+The dependent variable is binary variable, describing whether in-home team wins the game or not. The draw and lose outcome are classified into one category. We only care about the win outcome in this project.
 
 The independent variables I use are soccer team attributes, such as speed, defence, pass and dribble.
 
